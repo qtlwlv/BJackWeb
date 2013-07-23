@@ -4,6 +4,10 @@ require 'sinatra'
 
 set :sessions, true
 
+BLACKJACK = 21
+DEALER_MIN_STAY = 17
+PLAYER_POT = 500
+
 helpers do
   def total(hand)
     arr = hand.map{|face| face[1]}
@@ -20,47 +24,61 @@ helpers do
     end
 
     arr.select{|face| face == "A"}.count.times do
-      total -= 10 if total > 21
+      total -= 10 if total > BLACKJACK
     end
 
     total
   end
 
-  def jpgcard(hand)
-    arr0 = hand.map{|suit| suit[0]}
 
-    arr0.each do |suit|
-      if suit == "H"
-        suit.replace "hearts_"
-      elsif suit == "C"
-        suit.replace "clubs_"
-      elsif suit == "D"
-        suit.replace "diamonds_"
-      elsif suit == "S"
-        suit.replace "spades_"
+  def jpgcard(card)
+    suit = case card [0]
+      when 'H' then 'hearts'
+      when 'D' then 'diamonds'
+      when 'C' then 'clubs'
+      when 'S' then 'spades'
+    end
+
+    face = card [1]
+    if ['J', 'Q', 'K', 'A'].include?(face)
+      face = case card[1]
+        when 'J' then 'jack'
+        when 'Q' then 'queen'
+        when 'K' then 'king'
+        when 'A' then 'ace'
       end
     end
 
-    arr1 = hand.map{|face| face[1]}
+    "<img src='/images/cards/#{suit}_#{face}.jpg' class='jpgcard'>"
+  end
 
-    arr1.each do |face|
-      if face == "A"
-        face.replace "ace.jpg"
-      elsif face == "K"
-        face.replace "king.jpg"
-      elsif face == "Q"
-        face.replace "queen.jpg"
-      elsif face == "J"
-        face.replace "jack.jpg"
-      else
-        face.replace face.to_s + ".jpg"
-      end
-    end
 
-    arr2 = hand.map{|jpg| jpg[0]+jpg[1]}
+  def win(msg)
+    @show_hit_or_stay_buttons = false
+    @hand_compare = true
+    @show_play_again_or_exit_buttons = true
+    session[:player_pot] = session[:player_pot] + session[:player_bet]
+    @success = "Winner! #{msg}"
+  end
 
+
+  def lost(msg)
+    @show_hit_or_stay_buttons = false
+    @hand_compare = true
+    @show_play_again_or_exit_buttons = true
+    session[:player_pot] = session[:player_pot] - session[:player_bet]
+    @error = "Lost. #{msg}"
+  end
+
+
+  def push(msg)
+    @show_hit_or_stay_buttons = false
+    @hand_compare = true
+    @show_play_again_or_exit_buttons = true
+    @success = "Its a push! #{msg}"
   end
 end
+
 
 before do
   @show_hit_or_stay_buttons = true
@@ -77,15 +95,44 @@ get '/' do
 end
 
 get '/new_player' do
+  session[:player_pot] = PLAYER_POT
   erb :new_player
 end
 
 post '/new_player' do
-  session[:player_name] = params[:player_name]
-  redirect '/game'
+  if params[:player_name].empty?
+    @error = "Please tell us your name."
+    halt erb(:new_player)
+  end
+  session[:player_name] = params[:player_name].capitalize
+  redirect '/bet'
+end
+
+get '/bet' do
+  if session[:player_pot] == 0
+    redirect '/game_over'
+  else
+    session[:player_bet] = nil
+  end
+  erb :bet
+end
+
+post '/bet' do
+  if params[:bet_amount].nil? || params[:bet_amount].to_i == 0
+    @error = "You cant win if you don't bet.  Please place your bet."
+    halt erb(:bet)
+  elsif params[:bet_amount].to_i > session[:player_pot]
+    @error = "Sorry, no loans here. Bet amount cannot be greater than what you have: ($#{session[:player_pot]}"
+    halt erb(:bet)
+  else
+    session[:player_bet] = params[:bet_amount].to_i
+    redirect '/game'
+  end
 end
 
 get '/game' do
+  session[:turn] = session[:player_name]
+
   suit = ['H', 'D', 'C', 'S']
   face = ['2', '3', '4', '5', '6', '7', '8', '9', 'J', 'Q', 'K', 'A']
   session[:deck] = suit.product(face).shuffle!
@@ -98,21 +145,16 @@ get '/game' do
   session[:d_hand] << session[:deck].pop
   session[:p_hand] << session[:deck].pop
 
-  if total(session[:p_hand]) == 21 and total(session[:d_hand]) == 21
-    @success = "Push, both Dealer and Player have Blackjack"
-    @show_hit_or_stay_buttons = false
-    @hand_compare = true
-    @show_play_again_or_exit_buttons = true
-  elsif total(session[:p_hand]) == 21
-    @success = "You hit Blackjack! You win!"
-    @show_hit_or_stay_buttons = false
-    @hand_compare = true
-    @show_play_again_or_exit_buttons = true
-  elsif total(session[:d_hand]) == 21
-    @error = "Sorry, Dealer hit Blackjack. You lose."
-    @show_hit_or_stay_buttons = false
-    @hand_compare = true
-    @show_play_again_or_exit_buttons = true
+  if total(session[:p_hand]) == BLACKJACK and total(session[:d_hand]) == BLACKJACK
+    session[:turn] = "dealer"
+    push("Both #{session[:player_name]} and the Dealer have BlackJack!")
+  elsif total(session[:p_hand]) == BLACKJACK
+    session[:turn] = "dealer"
+    win("#{session[:player_name]} hit BlackJack!")
+    session[:player_pot] = session[:player_pot] + 0.5 * session[:player_bet]
+  elsif total(session[:d_hand]) == BLACKJACK
+    session[:turn] = "dealer"
+    lost("Dealer hit BlackJack.")
   end
 
   erb :game
@@ -121,24 +163,37 @@ end
 
 post '/game/player/hit' do
   session[:p_hand] << session[:deck].pop
-  if total(session[:p_hand]) > 21
-    @error = "Sorry, you bust."
-    @show_hit_or_stay_buttons = false
-    @show_play_again_or_exit_buttons = true
+  if total(session[:p_hand]) == BLACKJACK
+    @success = "Congratuations! #{session[:player_name]} has 21! I'll assume your staying."
+    @show_play_again_or_exit_buttons = false
+    redirect '/game/dealer'
+  elsif
+    total(session[:p_hand]) > BLACKJACK
+    lost("#{session[:player_name]} busted with #{total(session[:p_hand])}.")
   end
 
   erb :game
 end
 
 
+post '/game/player/stay' do
+  @success = "#{session[:player_name]} has chosen to stay."
+  @show_hit_or_stay_buttons = false
+  redirect '/game/dealer'
+  erb :game
+end
+
+
 get '/game/dealer' do
+  session[:turn] = "dealer"
+
   @show_hit_or_stay_buttons = false
   @hand_compare = true
   while true
-    if total(session[:d_hand]) < 17
+    if total(session[:d_hand]) < DEALER_MIN_STAY
       session[:d_hand] << session[:deck].pop
       @hand_compare = true
-    elsif total(session[:d_hand]) > 21
+    elsif total(session[:d_hand]) > BLACKJACK
       @success = "Dealer Busts! You Win!"
       @show_play_again_or_exit_buttons = true
       break
@@ -153,22 +208,20 @@ end
 
 
 get '/game/hand_compare' do
-  @show_hit_or_stay_buttons = false
-  @hand_compare = true
-    if total(session[:d_hand]) > 21
-      @success = "Dealer Busts! You Win!"
-      @show_play_again_or_exit_buttons = true
+    if total(session[:d_hand]) > BLACKJACK
+      win("Dealer Busts! #{session[:player_name]} wins with #{total(session[:p_hand])}.")
     elsif total(session[:d_hand]) > total(session[:p_hand])
-      @error = "Sorry, you lose. Dealer has greater hand."
-      @show_play_again_or_exit_buttons = true
+      lost("Dealer wins with #{total(session[:d_hand])}, #{session[:player_name]} has #{total(session[:p_hand])}.")
     elsif total(session[:d_hand]) == total(session[:p_hand])
-      @success = "Its a push"
-      @show_play_again_or_exit_buttons = true
+      push("Both Dealer and #{session[:player_name]} have #{total(session[:p_hand])}.")
     else
-      @success = "You Win!"
-      @show_play_again_or_exit_buttons = true
+      win("#{session[:player_name]} wins with #{total(session[:p_hand])}, Dealer has #{total(session[:d_hand])}.")
     end
 
   erb :game
 end
 
+
+get '/game_over' do
+  erb :game_over
+end

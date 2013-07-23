@@ -1,6 +1,41 @@
-<h2> Hi there, what's your name? </h2>
+<h1> Welcome to BlackJack! </h1>
+<br/>
+
+<h4> Like to play? Please tell us your name.</h4>
 <form action="/new_player" method="post">
   <input type="text" name="player_name"/>
   <br/>
-  <input type="submit" class="btn"/>
+  <input type="submit" class="btn btn-success" value="I'd love to play!"/>
 </form>
+<br/>
+
+<div class = "well">
+<h4> Rules: </h4>
+<h5>
+  <p>Two initial cards are dealt to the Player and Dealer.  The Player cards
+  are face up while the Dealer has one face down and one face up.</p>
+
+  <p>Face cards are worth 10 points, Aces can be counted as 1 point or 11
+    points, and all other cards are counted as the numeric value shown on the card.</p>
+
+  <p>After receiving initial cards, Players have the option of "hitting", which
+    means taking an additional card, or "staying" afterwhich begins the Dealers
+    turn.  Once it is the Dealers turn the Player will be able to see both the Dealers
+    cards.  The Dealer must hit until his total score is greater than or equal to
+    17.  </p>
+
+  <p>Scoring and payouts:</p>
+  <p>BlackJack: The intial cards total equals 21.  If Player has BlackJack and Dealer
+    does not, then the player wins 1.5 times their initial bet amount.  If Dealer has
+    BlackJack and Player does not then Dealer wins and Player loses their bet amount.  If both Dealer
+    and Player have BlackJack, then it is a tie (otherwise known as a push) and no monies
+    are won or lost.</p>
+  <p>Bust: The cards total are greater than 21, which results in an immediate loss.
+    In case of the Player their bet amount as well.  If Dealer busts and Player has not,
+    then it is an immediate win for the Player of the amount that was bet.</p>
+  <p>Greater Hand:  If neither Player nor Dealer bust or hit BlackJack then the game ends
+    by comparing hand totals.  If the Dealer has a greater total then he wins and the Player loses their
+    bet amount. Likewise, if Player has greater total they win their bet amount.</p>
+</div>
+
+

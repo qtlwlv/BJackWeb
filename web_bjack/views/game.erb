@@ -1,39 +1,41 @@
-<h2><%= session[:player_name].capitalize %>, welcome to Blackjack!</h2>
+<h4> Welcome <%=session[:player_name]%>.  The name of the game is ....</h4>
+<h1><em> <p class = "text-center"> BlackJack!</p></em></h1>
 
-Dealer's Cards:
-<ul>
-  <% session[:d_hand].each do |card| %>
-    <li><%= card.to_s %></li>
-  <%end %>
-</ul>
+<div class="well">
+  <h4> Dealer's Cards: </h4>
+   <% session[:d_hand].each_with_index do |card, i| %>
+    <% if session[:turn] != "dealer" && i == 0 %>
+      <img src="/images/cards/cover.jpg" class="jpgcard">
+    <% else %>
+      <%= jpgcard(card) %>
+    <%end %>
+  <%end%>
+</div>
 
-<br/>
 
-Player's Cards:
-<ul>
+<div class="well">
+  <h4> <%= session[:player_name] %>'s Cards: </h4>
   <% session[:p_hand].each do |card| %>
-    <li><%= card.to_s %></li>
+    <%= jpgcard(card) %>
   <%end %>
-</ul>
+</div>
 
 
 <% if @hand_compare %>
-<br/>
-<p> Dealer has <%= total(session[:d_hand]) %>. </p>
-<p> <%= session[:player_name].capitalize %> has <%= total(session[:p_hand]) %>.
-</p>
-<br/>
+<h5><p> Dealer has <%= total(session[:d_hand]) %>.
+  <%= session[:player_name].capitalize %> has <%= total(session[:p_hand]) %>.
+</p></h5>
 <% end %>
 
 
 <% if @show_play_again_or_exit_buttons %>
 <p>
-  What would you like to do <%= session[:player_name].capitalize %>?
-  <form action="/game" method="get">
-    <input type="submit" class="btn" value="Play Again" />
+   <h5>What would you like to do <%= session[:player_name]%>?</h5>
+  <form id="play_again" action="/bet" method="get">
+    <input type="submit" class="btn btn-large btn-success" value="Play Again" />
   </form>
-  <form action="/game/player/stay" method="post">
-    <input type="submit" class="btn" value="Leave Table" />
+  <form id="exit" action="/game_over" method="get">
+    <input type="submit" class="btn btn-large btn-inverse" value="Leave Table" />
   </form>
 <% end %>
 </p>
@@ -41,13 +43,13 @@ Player's Cards:
 
 <% if @show_hit_or_stay_buttons %>
 <p>
-  What would you like to do <%= session[:player_name].capitalize %>?
-  You have <%=total(session[:p_hand]) %>.
-  <form action="/game/player/hit" method="post">
-    <input type="submit" class="btn" value="Hit" />
+  <h5>What would you like to do <%= session[:player_name]%>?
+  You have <%=total(session[:p_hand]) %>.</h5>
+  <form id="hit" action="/game/player/hit" method="post">
+    <input type="submit" class="btn btn-large btn-primary" value="Hit" />
   </form>
-  <form action="/game/dealer" method="get">
-    <input type="submit" class="btn" value="Stay" />
+  <form id="stay" action="/game/player/stay" method="post">
+    <input type="submit" class="btn btn-large btn-inverse" value="Stay" />
   </form>
 <% end %>
 </p>

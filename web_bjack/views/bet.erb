@@ -1,0 +1,15 @@
+<h1> BlackJack Wager.... </h1>
+<br/>
+<h2><em><p class="text-center"> are you feeling lucky?</p></em></h2>
+  <br/>
+
+<div class = "well">
+<h3>Please make a bet for this round.</h3>
+<br/>
+<h4><p><%= session[:player_name] %> has $<%= session[:player_pot].to_i %></p></h4>
+<form action='bet' method='post'>
+  <input type="text" name="bet_amount" />
+  <br/>
+  <input type="submit" value="Bet" class="btn btn-large btn-success" />
+</form>
+</div>

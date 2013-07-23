@@ -1,0 +1,21 @@
+<h1> Game Over.... </h1>
+<br/>
+<div class="well">
+<h3>
+  <% if session[:player_pot] < PLAYER_POT %>
+      Wow! I look great in your shirt!  Please come again soon, I've been in the
+      need for a new wardrobe.
+  <% elsif session[:player_pot] == PLAYER_POT%>
+      Huh?!?!? Did you even play or just wanted the free drink?  Why don't you just ....
+  <% else %>
+      Woo-eeey! Are you hot!  Maybe you should try the casinos in Iceland.  I hear they
+      could use the heat.
+  <% end %>
+
+<a href='/new_player'>Start over.</a>
+</h3>
+<br/>
+<h4><%= session[:player_name] %> started with $<%=PLAYER_POT%> and is leaving with
+    $<%= session[:player_pot]%>.
+</h4>
+</div>
