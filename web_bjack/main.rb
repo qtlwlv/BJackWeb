@@ -58,7 +58,7 @@ helpers do
     @hand_compare = true
     @show_play_again_or_exit_buttons = true
     session[:player_pot] = session[:player_pot] + session[:player_bet]
-    @success = "Winner! #{msg}"
+    @winner = "Winner! #{msg}"
   end
 
 
@@ -67,7 +67,7 @@ helpers do
     @hand_compare = true
     @show_play_again_or_exit_buttons = true
     session[:player_pot] = session[:player_pot] - session[:player_bet]
-    @error = "Lost. #{msg}"
+    @loser = "Lost. #{msg}"
   end
 
 
@@ -75,7 +75,7 @@ helpers do
     @show_hit_or_stay_buttons = false
     @hand_compare = true
     @show_play_again_or_exit_buttons = true
-    @success = "Its a push! #{msg}"
+    @winner = "Its a push! #{msg}"
   end
 end
 
@@ -122,7 +122,7 @@ post '/bet' do
     @error = "You cant win if you don't bet.  Please place your bet."
     halt erb(:bet)
   elsif params[:bet_amount].to_i > session[:player_pot]
-    @error = "Sorry, no loans here. Bet amount cannot be greater than what you have: ($#{session[:player_pot]}"
+    @error = "Sorry, no loans here. Bet amount cannot be greater than what you have: $#{session[:player_pot]}"
     halt erb(:bet)
   else
     session[:player_bet] = params[:bet_amount].to_i
@@ -164,7 +164,7 @@ end
 post '/game/player/hit' do
   session[:p_hand] << session[:deck].pop
   if total(session[:p_hand]) == BLACKJACK
-    @success = "Congratuations! #{session[:player_name]} has 21! I'll assume your staying."
+    @winner = "Congratuations! #{session[:player_name]} has 21! I'll assume your staying."
     @show_play_again_or_exit_buttons = false
     redirect '/game/dealer'
   elsif
@@ -172,15 +172,15 @@ post '/game/player/hit' do
     lost("#{session[:player_name]} busted with #{total(session[:p_hand])}.")
   end
 
-  erb :game
+  erb :game, layout: false
 end
 
 
 post '/game/player/stay' do
-  @success = "#{session[:player_name]} has chosen to stay."
+  @winner = "#{session[:player_name]} has chosen to stay."
   @show_hit_or_stay_buttons = false
   redirect '/game/dealer'
-  erb :game
+  erb :game, layout: false
 end
 
 
@@ -194,7 +194,7 @@ get '/game/dealer' do
       session[:d_hand] << session[:deck].pop
       @hand_compare = true
     elsif total(session[:d_hand]) > BLACKJACK
-      @success = "Dealer Busts! You Win!"
+      @winner = "Dealer Busts! You Win!"
       @show_play_again_or_exit_buttons = true
       break
     else
